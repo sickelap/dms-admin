@@ -80,7 +80,7 @@ check_docker_prerequisites() {
 build_and_push() {
   local name="$1"
   local context_dir="$2"
-  local image="$DMS_ADMIN_IMAGE_REGISTRY/dms-admin-${name}-${DMS_ADMIN_IMAGE_ARCH}:$DMS_ADMIN_IMAGE_TAG"
+  local image="$DMS_ADMIN_IMAGE_REGISTRY/${name}:$DMS_ADMIN_IMAGE_TAG"
 
   printf '\n==> Building and pushing %s\n' "$image"
 
