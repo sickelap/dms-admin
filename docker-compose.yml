@@ -1,0 +1,27 @@
+services:
+  api:
+    build:
+      context: ./backend
+    environment:
+      DMS_ADMIN_ADMIN_USERNAME: ${DMS_ADMIN_ADMIN_USERNAME:-admin}
+      DMS_ADMIN_ADMIN_PASSWORD: ${DMS_ADMIN_ADMIN_PASSWORD:-admin}
+      DMS_ADMIN_SESSION_SECRET: ${DMS_ADMIN_SESSION_SECRET:-local-dev-secret}
+      DMS_ADMIN_DMS_CONTAINER_NAME: ${DMS_ADMIN_DMS_CONTAINER_NAME:-mailserver}
+    ports:
+      - "${DMS_ADMIN_API_PORT:-8000}:8000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./backend:/app
+    command: ["uv", "run", "uvicorn", "dms_admin_api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api}
+    ports:
+      - "${DMS_ADMIN_FRONTEND_PORT:-5173}:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]

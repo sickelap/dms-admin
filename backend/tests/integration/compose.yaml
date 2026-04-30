@@ -1,0 +1,27 @@
+services:
+  mailserver:
+    image: ${DMS_IMAGE:-ghcr.io/docker-mailserver/docker-mailserver:13}
+    container_name: dms-admin-test-mailserver
+    hostname: mail
+    domainname: example.test
+    env_file:
+      - .env
+    environment:
+      ENABLE_AMAVIS: 0
+      ENABLE_CLAMAV: 0
+      ENABLE_FAIL2BAN: 0
+      ENABLE_POSTGREY: 0
+      ENABLE_RSPAMD: 0
+      ENABLE_SPAMASSASSIN: 0
+      ONE_DIR: 1
+      PERMIT_DOCKER: connected-networks
+    volumes:
+      - ./docker-data/dms/config:/tmp/docker-mailserver
+      - ./docker-data/dms/mail-data:/var/mail
+      - ./docker-data/dms/mail-state:/var/mail-state
+      - ./docker-data/dms/logs:/var/log/mail
+    healthcheck:
+      test: ["CMD-SHELL", "setup help >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
