@@ -9,6 +9,8 @@ import pytest
 from dms_admin_api.config import Settings
 from dms_admin_api.dms.service import DmsService
 
+from .compose_command import resolve_compose_command
+
 COMPOSE_FILE = Path(__file__).with_name("compose.yaml")
 COMPOSE_DIR = COMPOSE_FILE.parent
 DOCKER_DATA_DIR = COMPOSE_DIR / "docker-data" / "dms"
@@ -21,7 +23,7 @@ pytestmark = pytest.mark.skipif(
 
 def _compose(*args: str) -> None:
     subprocess.run(
-        ["docker", "compose", "-f", str(COMPOSE_FILE), *args],
+        [*resolve_compose_command(), "-f", str(COMPOSE_FILE), *args],
         cwd=COMPOSE_DIR,
         check=True,
     )
