@@ -39,6 +39,9 @@ Useful overrides:
 - `DMS_ADMIN_API_PORT`: published API port, default `8000`
 - `DMS_ADMIN_FRONTEND_PORT`: published frontend port, default `5173`
 - `VITE_API_BASE_URL`: frontend API base URL, default `http://localhost:8000/api`
+- `DMS_ADMIN_IMAGE_REGISTRY`: image registry or namespace used by compose image references
+- `DMS_ADMIN_IMAGE_ARCH`: image architecture suffix, default `amd64`
+- `DMS_ADMIN_IMAGE_TAG`: image tag, default `latest`
 
 Example against the local integration DMS container:
 
@@ -50,6 +53,49 @@ Legacy Compose equivalent:
 
 ```bash
 DMS_ADMIN_DMS_CONTAINER_NAME=dms-admin-test-mailserver docker-compose up --build
+```
+
+Compose keeps local `build` configuration for development and also assigns configurable image names. With the image variables above, the API service resolves to:
+
+```text
+${DMS_ADMIN_IMAGE_REGISTRY}/dms-admin-backend-${DMS_ADMIN_IMAGE_ARCH}:${DMS_ADMIN_IMAGE_TAG}
+```
+
+The frontend service follows the same convention with `dms-admin-frontend`.
+
+## Publishing images
+
+Use `scripts/build-images.sh` to build and push backend and frontend runtime images for one architecture. The script reads the same image variables from the shell or from the root `.env` file. Shell variables take precedence over `.env` values.
+
+Required configuration:
+
+- `DMS_ADMIN_IMAGE_REGISTRY`: target registry or namespace, for example `ghcr.io/example`
+- `DMS_ADMIN_IMAGE_ARCH`: target architecture, either `amd64` or `arm64`; defaults to `amd64`
+- `DMS_ADMIN_IMAGE_TAG`: image tag; defaults to `latest`
+
+Authenticate with the target registry before publishing:
+
+```bash
+docker login ghcr.io
+```
+
+Example using `.env` values:
+
+```bash
+scripts/build-images.sh
+```
+
+Example one-off publish:
+
+```bash
+DMS_ADMIN_IMAGE_REGISTRY=ghcr.io/example DMS_ADMIN_IMAGE_ARCH=arm64 DMS_ADMIN_IMAGE_TAG=latest scripts/build-images.sh
+```
+
+The script pushes:
+
+```text
+<registry>/dms-admin-backend-<arch>:<tag>
+<registry>/dms-admin-frontend-<arch>:<tag>
 ```
 
 ## Multi-architecture validation

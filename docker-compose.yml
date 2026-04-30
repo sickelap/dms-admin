@@ -2,6 +2,7 @@ version: "3.8"
 
 services:
   api:
+    image: ${DMS_ADMIN_IMAGE_REGISTRY:-dms-admin}/dms-admin-backend-${DMS_ADMIN_IMAGE_ARCH:-amd64}:${DMS_ADMIN_IMAGE_TAG:-latest}
     build:
       context: ./backend
     environment:
@@ -17,6 +18,7 @@ services:
     command: ["uv", "run", "uvicorn", "dms_admin_api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
   frontend:
+    image: ${DMS_ADMIN_IMAGE_REGISTRY:-dms-admin}/dms-admin-frontend-${DMS_ADMIN_IMAGE_ARCH:-amd64}:${DMS_ADMIN_IMAGE_TAG:-latest}
     build:
       context: ./frontend
     environment:
