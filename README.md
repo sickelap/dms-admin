@@ -10,12 +10,15 @@ Single-server admin interface for Docker Mail Server.
 
 ## Local development
 
-1. Start Docker Mail Server separately and note its container name.
-2. Copy `.env.example` to `.env` and update values if your container is not named `mailserver`.
-3. Run the backend with `uv run uvicorn dms_admin_api.main:app --reload` from `backend/`.
-4. Run the frontend with `npm run dev` from `frontend/`.
+1. Copy `.env.example` to `.env`.
+2. Choose a workflow:
+   - Dev overlay with an existing DMS container:
+     `docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build`
+   - Dev overlay with the optional local mailserver:
+     `docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.full.yml up --build`
+3. If you are using an external DMS container, set `DMS_ADMIN_DMS_CONTAINER_NAME` in `.env` to match it.
 
-The root compose workflow reads supported local overrides from `.env`. If `.env` is absent, compose uses the documented defaults from `docker-compose.yml`.
+The root Compose workflow reads supported local overrides from `.env`. If `.env` is absent, Compose uses the documented defaults from the compose files.
 
 ## Tests
 
@@ -29,7 +32,40 @@ The integration suite starts a local Docker Mail Server container from `backend/
 
 ## Docker compose
 
-Use `docker compose up --build` to run the admin services alongside a running DMS instance. On hosts with the legacy Compose binary, use `docker-compose up --build`.
+The repository now uses a layered Compose workflow:
+
+- `docker-compose.yml`: base runtime stack for `api` and `frontend` using existing images
+- `docker-compose.dev.yml`: local build, bind mount, and reload overrides
+- `docker-compose.full.yml`: optional local mailserver stack
+
+Common commands:
+
+```bash
+docker compose up
+```
+
+- Starts the base runtime stack using existing images.
+- If the configured images are not present locally, Compose can pull them from the configured registry.
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+- Starts the local development stack for `api` and `frontend`.
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.full.yml up
+```
+
+- Starts the base runtime stack plus the optional local mailserver.
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.full.yml up --build
+```
+
+- Starts the full local development stack, including the optional local mailserver.
+
+On hosts with the legacy Compose binary, replace `docker compose` with `docker-compose`.
 
 Useful overrides:
 
@@ -40,32 +76,21 @@ Useful overrides:
 - `DMS_ADMIN_FRONTEND_PORT`: published frontend port, default `5173`
 - `VITE_API_BASE_URL`: frontend API base URL, default `http://localhost:8000/api`
 - `DMS_ADMIN_IMAGE_REGISTRY`: image registry or namespace used by compose image references
-- `DMS_ADMIN_IMAGE_ARCH`: image architecture suffix, default `amd64`
 - `DMS_ADMIN_IMAGE_TAG`: image tag, default `latest`
+- `DMS_ADMIN_MAILSERVER_IMAGE`: optional mailserver image for the full-stack overlay
+- `DMS_ADMIN_MAILSERVER_HOSTNAME`: optional mailserver hostname for the full-stack overlay
+- `DMS_ADMIN_MAILSERVER_DOMAINNAME`: optional mailserver domain name for the full-stack overlay
 
-Example against the local integration DMS container:
-
-```bash
-DMS_ADMIN_DMS_CONTAINER_NAME=dms-admin-test-mailserver docker compose up --build
-```
-
-Legacy Compose equivalent:
-
-```bash
-DMS_ADMIN_DMS_CONTAINER_NAME=dms-admin-test-mailserver docker-compose up --build
-```
-
-Compose keeps local `build` configuration for development and also assigns configurable image names. With the image variables above, the API service resolves to:
+With the image variables above, the base Compose stack resolves services to:
 
 ```text
-${DMS_ADMIN_IMAGE_REGISTRY}/dms-admin-backend-${DMS_ADMIN_IMAGE_ARCH}:${DMS_ADMIN_IMAGE_TAG}
+${DMS_ADMIN_IMAGE_REGISTRY}/backend:${DMS_ADMIN_IMAGE_TAG}
+${DMS_ADMIN_IMAGE_REGISTRY}/frontend:${DMS_ADMIN_IMAGE_TAG}
 ```
 
-The frontend service follows the same convention with `dms-admin-frontend`.
+## Building and pushing images
 
-## Publishing images
-
-Use `scripts/build-images.sh` to build and push backend and frontend runtime images for one architecture. The script reads the same image variables from the shell or from the root `.env` file. Shell variables take precedence over `.env` values.
+Use `scripts/build-images.sh` to build backend and frontend runtime images locally for one architecture. Use `scripts/push-images.sh` to push the existing local tags to a registry. Both scripts read the same image variables from the shell or from the root `.env` file. Shell variables take precedence over `.env` values.
 
 Required configuration:
 
@@ -85,17 +110,29 @@ Example using `.env` values:
 scripts/build-images.sh
 ```
 
-Example one-off publish:
+Push the built tags:
+
+```bash
+scripts/push-images.sh
+```
+
+Example one-off build:
 
 ```bash
 DMS_ADMIN_IMAGE_REGISTRY=ghcr.io/example DMS_ADMIN_IMAGE_ARCH=arm64 DMS_ADMIN_IMAGE_TAG=latest scripts/build-images.sh
 ```
 
-The script pushes:
+Example one-off push:
+
+```bash
+DMS_ADMIN_IMAGE_REGISTRY=ghcr.io/example DMS_ADMIN_IMAGE_ARCH=arm64 DMS_ADMIN_IMAGE_TAG=latest scripts/push-images.sh
+```
+
+The scripts operate on:
 
 ```text
-<registry>/dms-admin-backend-<arch>:<tag>
-<registry>/dms-admin-frontend-<arch>:<tag>
+<registry>/backend:<tag>
+<registry>/frontend:<tag>
 ```
 
 ## Multi-architecture validation

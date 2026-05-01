@@ -1,10 +1,6 @@
-version: "3.8"
-
 services:
   api:
     image: ${DMS_ADMIN_IMAGE_REGISTRY:-dms-admin}/backend:${DMS_ADMIN_IMAGE_TAG:-latest}
-    build:
-      context: ./backend
     environment:
       DMS_ADMIN_ADMIN_USERNAME: ${DMS_ADMIN_ADMIN_USERNAME:-admin}
       DMS_ADMIN_ADMIN_PASSWORD: ${DMS_ADMIN_ADMIN_PASSWORD:-admin}
@@ -12,20 +8,10 @@ services:
       DMS_ADMIN_DMS_CONTAINER_NAME: ${DMS_ADMIN_DMS_CONTAINER_NAME:-mailserver}
     ports:
       - "${DMS_ADMIN_API_PORT:-8000}:8000"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./backend:/app
-    command: [ "uv", "run", "uvicorn", "dms_admin_api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload" ]
 
   frontend:
     image: ${DMS_ADMIN_IMAGE_REGISTRY:-dms-admin}/frontend:${DMS_ADMIN_IMAGE_TAG:-latest}
-    build:
-      context: ./frontend
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api}
     ports:
       - "${DMS_ADMIN_FRONTEND_PORT:-5173}:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    command: [ "npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173" ]

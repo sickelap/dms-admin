@@ -1,0 +1,35 @@
+services:
+  api:
+    environment:
+      DMS_ADMIN_DMS_CONTAINER_NAME: ${DMS_ADMIN_DMS_CONTAINER_NAME:-mailserver}
+
+  mailserver:
+    image: ${DMS_ADMIN_MAILSERVER_IMAGE:-ghcr.io/docker-mailserver/docker-mailserver:13}
+    container_name: ${DMS_ADMIN_DMS_CONTAINER_NAME:-mailserver}
+    hostname: ${DMS_ADMIN_MAILSERVER_HOSTNAME:-mail}
+    domainname: ${DMS_ADMIN_MAILSERVER_DOMAINNAME:-example.test}
+    environment:
+      ENABLE_AMAVIS: 0
+      ENABLE_CLAMAV: 0
+      ENABLE_FAIL2BAN: 0
+      ENABLE_POSTGREY: 0
+      ENABLE_RSPAMD: 0
+      ENABLE_SPAMASSASSIN: 0
+      ONE_DIR: 1
+      PERMIT_DOCKER: connected-networks
+    volumes:
+      - dms-mail-config:/tmp/docker-mailserver
+      - dms-mail-data:/var/mail
+      - dms-mail-state:/var/mail-state
+      - dms-mail-logs:/var/log/mail
+    healthcheck:
+      test: ["CMD-SHELL", "setup help >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+
+volumes:
+  dms-mail-config:
+  dms-mail-data:
+  dms-mail-state:
+  dms-mail-logs:
