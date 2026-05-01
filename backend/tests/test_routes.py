@@ -1,5 +1,9 @@
+from pathlib import Path
+
+import pytest
 from fastapi.testclient import TestClient
 
+from dms_admin_api.config import get_settings
 from dms_admin_api.dms.models import Account, Alias, MutationResult, Quota, RelayAuth, RelayDomain, RelayState
 from dms_admin_api.dms.service import get_dms_service
 from dms_admin_api.main import create_app
@@ -68,6 +72,25 @@ def build_client() -> TestClient:
     return client
 
 
+@pytest.fixture(autouse=True)
+def clear_settings_cache(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DMS_ADMIN_DMS_CONTAINER_NAME", "mailserver")
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
+def configure_frontend_dist(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    dist_dir = tmp_path / "frontend-dist"
+    assets_dir = dist_dir / "assets"
+    assets_dir.mkdir(parents=True)
+    (dist_dir / "index.html").write_text("<html><body><div id='root'>DMS Admin</div></body></html>")
+    (assets_dir / "app.js").write_text("console.log('dms-admin');")
+    monkeypatch.setenv("DMS_ADMIN_FRONTEND_DIST_DIR", str(dist_dir))
+    get_settings.cache_clear()
+    return dist_dir
+
+
 def test_accounts_endpoint_returns_accounts() -> None:
     client = build_client()
 
@@ -105,3 +128,54 @@ def test_system_endpoint_reports_unreachable_dms() -> None:
 
     assert response.status_code == 200
     assert response.json() == {"dms_container_name": "mailserver", "dms_reachable": False}
+
+
+def test_root_document_is_served_from_bundled_frontend_dist(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    configure_frontend_dist(tmp_path, monkeypatch)
+    client = TestClient(create_app())
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "DMS Admin" in response.text
+
+
+def test_static_assets_are_served_from_bundled_frontend_dist(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    configure_frontend_dist(tmp_path, monkeypatch)
+    client = TestClient(create_app())
+
+    response = client.get("/assets/app.js")
+
+    assert response.status_code == 200
+    assert "console.log('dms-admin');" in response.text
+
+
+def test_client_side_routes_fall_back_to_index_html(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    configure_frontend_dist(tmp_path, monkeypatch)
+    client = TestClient(create_app())
+
+    response = client.get("/accounts")
+
+    assert response.status_code == 200
+    assert "DMS Admin" in response.text
+
+
+def test_api_routes_do_not_fall_back_to_index_html(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    configure_frontend_dist(tmp_path, monkeypatch)
+    client = TestClient(create_app())
+
+    response = client.get("/api/does-not-exist")
+
+    assert response.status_code == 404

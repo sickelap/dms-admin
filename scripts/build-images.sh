@@ -5,11 +5,9 @@ set -euo pipefail
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/image-common.sh"
 
 build_image() {
-  local name="$1"
-  local context_dir="$2"
   local image
 
-  image="$(image_ref "$name")"
+  image="$(image_ref "dms-admin")"
 
   printf '\n==> Building %s\n' "$image"
 
@@ -17,14 +15,14 @@ build_image() {
     --platform "linux/$DMS_ADMIN_IMAGE_ARCH" \
     --load \
     -t "$image" \
-    "$context_dir"
+    -f "$ROOT_DIR/backend/Dockerfile" \
+    "$ROOT_DIR"
 }
 
 source_env_preserving_shell_overrides
 require_image_configuration
 check_buildx_prerequisites
 
-build_image "backend" "$ROOT_DIR/backend"
-build_image "frontend" "$ROOT_DIR/frontend"
+build_image
 
 printf '\nImages built successfully.\n'

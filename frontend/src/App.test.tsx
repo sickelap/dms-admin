@@ -42,7 +42,7 @@ function installMockApi() {
   };
 
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = new URL(typeof input === "string" ? input : input.toString());
+    const url = new URL(typeof input === "string" ? input : input.toString(), "http://localhost");
     const path = `${url.pathname}${url.search}`;
     const method = init?.method ?? "GET";
     const body = init?.body ? JSON.parse(String(init.body)) : null;
@@ -223,5 +223,17 @@ describe("App", () => {
     await user.click(screen.getByRole("link", { name: "System" }));
     await screen.findByText("mailserver");
     await screen.findByText("Yes");
+  });
+
+  test("uses same-origin api paths by default", async () => {
+    const { fetchMock } = installMockApi();
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/auth/session");
   });
 });

@@ -15,13 +15,10 @@ source_env_preserving_shell_overrides
 require_image_configuration
 check_docker_access
 
-backend_image="$(image_ref "backend")"
-frontend_image="$(image_ref "frontend")"
+backend_image="$(image_ref "dms-admin")"
 
 require_local_image "$backend_image"
-require_local_image "$frontend_image"
 
 push_image "$backend_image"
-push_image "$frontend_image"
 
 printf '\nImages pushed successfully.\n'

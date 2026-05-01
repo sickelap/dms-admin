@@ -9,10 +9,3 @@ services:
       DMS_ADMIN_DMS_CONTAINER_NAME: ${DMS_ADMIN_DMS_CONTAINER_NAME:-mailserver}
     ports:
       - "${DMS_ADMIN_API_PORT:-8000}:8000"
-
-  frontend:
-    image: ${DMS_ADMIN_IMAGE_REGISTRY:-dms-admin}/frontend:${DMS_ADMIN_IMAGE_TAG:-latest}
-    environment:
-      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api}
-    ports:
-      - "${DMS_ADMIN_FRONTEND_PORT:-5173}:5173"

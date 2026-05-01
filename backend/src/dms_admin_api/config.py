@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -13,12 +14,17 @@ class Settings(BaseSettings):
     dms_container_name: str = Field(default="mailserver")
     dms_config_dir: str = Field(default="/tmp/docker-mailserver")
     docker_binary: str = Field(default="docker")
+    frontend_dist_dir: str = Field(default="/app/frontend-dist")
 
     model_config = SettingsConfigDict(
         env_prefix="DMS_ADMIN_",
         env_file=".env",
         extra="ignore",
     )
+
+    @property
+    def frontend_dist_path(self) -> Path:
+        return Path(self.frontend_dist_dir)
 
 
 @lru_cache

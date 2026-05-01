@@ -36,38 +36,35 @@ build_and_test_backend() {
   tag_suffix="$(platform_tag "$platform")"
   local runtime_image="dms-admin-backend:${tag_suffix}"
   local test_image="dms-admin-backend-test:${tag_suffix}"
+  local frontend_test_image="dms-admin-frontend-test:${tag_suffix}"
 
   docker buildx build \
     --platform "$platform" \
     --target runtime \
     --load \
     -t "$runtime_image" \
-    "$ROOT_DIR/backend"
+    -f "$ROOT_DIR/backend/Dockerfile" \
+    "$ROOT_DIR"
 
   docker buildx build \
     --platform "$platform" \
     --target test \
     --load \
     -t "$test_image" \
-    "$ROOT_DIR/backend"
+    -f "$ROOT_DIR/backend/Dockerfile" \
+    "$ROOT_DIR"
 
   docker run --rm --platform "$platform" "$test_image"
-}
-
-build_and_test_frontend() {
-  local platform="$1"
-  local tag_suffix
-  tag_suffix="$(platform_tag "$platform")"
-  local image="dms-admin-frontend:${tag_suffix}"
 
   docker buildx build \
     --platform "$platform" \
+    --target frontend-test \
     --load \
-    -t "$image" \
-    "$ROOT_DIR/frontend"
+    -t "$frontend_test_image" \
+    -f "$ROOT_DIR/backend/Dockerfile" \
+    "$ROOT_DIR"
 
-  docker run --rm --platform "$platform" "$image" npm test
-  docker run --rm --platform "$platform" "$image" npm run build
+  docker run --rm --platform "$platform" "$frontend_test_image"
 }
 
 check_docker_prerequisites
@@ -76,7 +73,6 @@ for platform in "${PLATFORMS[@]}"; do
   printf '\n==> Validating %s\n' "$platform"
   check_platform_can_run "$platform"
   build_and_test_backend "$platform"
-  build_and_test_frontend "$platform"
 done
 
 printf '\nMulti-architecture validation completed successfully.\n'
