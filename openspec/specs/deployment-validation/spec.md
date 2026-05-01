@@ -60,23 +60,31 @@ The system SHALL provide separate repository scripts that build backend and fron
 - **THEN** the script exits with a clear message that identifies the missing prerequisite
 
 ### Requirement: Compose image references are environment configurable
-The system SHALL allow Docker Compose backend and frontend image references to be configured from environment values for registry, architecture, and tag across runtime and development workflows.
+The system SHALL allow Docker Compose image references and local development startup behavior to be configured from documented environment values across runtime and development workflows.
 
-#### Scenario: Base compose uses configured published images
-- **WHEN** an operator defines image registry, architecture, and tag values in the root `.env` file and starts the base Compose stack
-- **THEN** Docker Compose resolves backend and frontend service image references using those values
+#### Scenario: Base compose uses configured published image
+- **WHEN** an operator defines image registry and tag values in the root `.env` file and starts the base Compose stack
+- **THEN** Docker Compose resolves the backend runtime image reference using those values
 
-#### Scenario: Base compose can pull missing images
-- **WHEN** an operator starts the base Compose stack without the configured backend or frontend images present locally
-- **THEN** Docker Compose is able to pull the missing images from the configured registry and start the services
+#### Scenario: Base compose prerequisites are documented
+- **WHEN** a contributor follows the repository documentation for the base Compose workflow
+- **THEN** the documentation states that the workflow depends on a published image being available or on an equivalent prior local image build
+
+#### Scenario: Development compose keeps local build workflow available
+- **WHEN** a contributor starts Docker Compose with the development overlay in a local development environment
+- **THEN** Docker Compose uses the defined local build configuration and development container settings for the backend and frontend services without requiring a published backend image
+
+#### Scenario: Development compose publishes the frontend port
+- **WHEN** a contributor starts Docker Compose with the development overlay
+- **THEN** the frontend service is reachable from the host on the configured frontend port
+
+#### Scenario: Full-stack development compose remains available
+- **WHEN** a contributor starts Docker Compose with the development and full-stack overlays together
+- **THEN** the backend, frontend, and optional mailserver services start with the documented local workflow expectations intact
 
 #### Scenario: Compose image tags default to latest
 - **WHEN** an operator starts the base Compose stack without setting an image tag
-- **THEN** Docker Compose resolves backend and frontend service image references using the `latest` tag
-
-#### Scenario: Development compose keeps local build workflow available
-- **WHEN** an operator starts Docker Compose in a local development environment
-- **THEN** Docker Compose uses the defined local build configuration and development container settings for the backend and frontend services
+- **THEN** Docker Compose resolves backend image references using the `latest` tag
 
 ### Requirement: Compose stack supports optional local mailserver
 The system SHALL provide a Compose workflow that adds a local mailserver service only when the optional full-stack configuration is requested.
@@ -92,3 +100,4 @@ The system SHALL provide a Compose workflow that adds a local mailserver service
 #### Scenario: Full-stack compose wires API to the local mailserver
 - **WHEN** an operator starts Docker Compose with the full-stack overlay
 - **THEN** the API service is configured to target the Compose-managed local mailserver container by its expected container name
+

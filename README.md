@@ -12,9 +12,9 @@ Single-server admin interface for Docker Mail Server.
 
 1. Copy `.env.example` to `.env`.
 2. Choose a workflow:
-   - Dev overlay with an existing DMS container:
+   - Local development with an existing DMS container:
      `docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build`
-   - Dev overlay with the optional local mailserver:
+   - Local development with the optional local mailserver:
      `docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.full.yml up --build`
 3. If you are using an external DMS container, set `DMS_ADMIN_DMS_CONTAINER_NAME` in `.env` to match it.
 
@@ -41,25 +41,28 @@ The repository now uses a layered Compose workflow:
 Common commands:
 
 ```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+- Starts the recommended contributor workflow for local development.
+- Builds the backend and frontend images locally.
+- Publishes the backend on `http://localhost:8000`.
+- Publishes the Vite frontend on `http://localhost:5173`.
+
+```bash
 docker compose up
 ```
 
 - Starts the base runtime stack using the single production application image.
-- If the configured images are not present locally, Compose can pull them from the configured registry.
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
-```
-
-- Starts the local development stack for `api` and `frontend`.
-- The backend remains available on `http://localhost:8000`.
-- The Vite development frontend remains available on `http://localhost:5173`.
+- This workflow is intended for a published-image runtime or for a previously built local image tagged as `${DMS_ADMIN_IMAGE_REGISTRY}/backend:${DMS_ADMIN_IMAGE_TAG}`.
+- If that image is not present locally, Compose attempts to pull it from the configured registry.
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.full.yml up
 ```
 
 - Starts the base runtime stack plus the optional local mailserver.
+- Uses the same image-backed prerequisite path as `docker compose up`.
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.full.yml up --build

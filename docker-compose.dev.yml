@@ -12,6 +12,8 @@ services:
   frontend:
     build:
       context: ./frontend
+    ports:
+      - "${DMS_ADMIN_FRONTEND_PORT:-5173}:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules

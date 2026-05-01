@@ -1,4 +1,3 @@
-version: "3.3"
 services:
   api:
     image: ${DMS_ADMIN_IMAGE_REGISTRY:-dms-admin}/backend:${DMS_ADMIN_IMAGE_TAG:-latest}
